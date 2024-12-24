@@ -1,29 +1,46 @@
+create database agencia_db;
+use agencia_db;
+
 CREATE TABLE PaqueteTuristico(
     id_paquete_turistico int identity(1,1) primary key,
-    nombre varchar(500),
-    fecha_inicio date,
-    fecha_termino date,
-    precio_final int
+    nombre varchar(500) not null,
+    fecha_inicio date not null,
+    fecha_termino date not null,
+    precio_final int not null
 );
 
 CREATE TABLE Destino(
     id_destino int identity(1,1) primary key,
-    nombre varchar(50),
-    descripcion varchar(500),
-    actividades varchar(200),
-    id_paquete_turistico INT REFERENCES PaqueteTuristico(id_paquete_turistico)
-
+    nombre varchar(50) not null,
+    descripcion varchar(500) not null,
+    actividades varchar(200) not null,
+    id_paquete_turistico INT REFERENCES PaqueteTuristico(id_paquete_turistico) not null
 );
+
 CREATE TABLE Cliente(
 	id_cliente int identity(1,1) primary key,
-	nombre varchar(500),
-	correo varchar(400),
-	contrasenia varchar(300)
+	nombre varchar(500) not null,
+	usuario varchar(100) not null unique,
+	correo varchar(400) not null,
+	contrasenia varchar(300) not null
 );
 
+create table Reserva (
+	id_reserva int identity(1,1) primary key,
+	id_cliente int REFERENCES Cliente(id_cliente),
+	id_paquete_turistico int REFERENCES PaqueteTuristico(id_paquete_turistico),
+	fecha_reserva date
+);
+
+
+create table DetallePaquete (
+	id_detalle_paquete int primary key identity(1,1),
+	id_destino int REFERENCES Destino(id_destino),
+	id_paquete_turistico int REFERENCES PaqueteTuristico(id_paquete_turistico)
+);
 -- VISTAS --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE VIEW DetallePaquete AS
+CREATE VIEW vista_detalle_paquete AS
     SELECT PaqueteTuristico.id_paquete_turistico, 
             PaqueteTuristico.nombre, 
             PaqueteTuristico.fecha_inicio, 
@@ -45,7 +62,7 @@ CREATE VIEW DetallePaquete AS
                 Destino.actividades
 ;
 
-CREATE VIEW Reserva AS
+CREATE VIEW vista_reserva AS
     SELECT Cliente.id_cliente, 
             PaqueteTuristico.id_paquete_turistico,
             count(Cliente.id_cliente) AS CantidadReservas
@@ -56,34 +73,35 @@ CREATE VIEW Reserva AS
     PaqueteTuristico.id_paquete_turistico
 ;
 
-
 -- Triggers ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Paquete Turistico - con auditoria
----- InsertarPaqueteTuristico(nombre_pq, fecha_inicio, fecha_termino, precio_final);
----- ActualizaFechasPT(id_pt, nueva_fecha_inicio, nueva_fecha_termino)
----- ActualizarNombrePT(id_pt, nuevo_nombre)
----- ActualizarPrecioFinalPT(id_pt, nuevo_nombre)
+---- EXEC IsertarPaqueteTuristico nombre_pq, CAST('fecha_inicio' AS DATETIME), CAST('fecha_final' AS DATETIME), precio_final;
+---- EXEC ActualizaFechasPT id_pt, nueva_fecha_inicio,  CAST('nueva_fecha_termino' AS DATETIME)
+---- EXEC ActualizarNombrePT id_pt, nuevo_nombre 
+---- EXEC ActualizarPrecioFinalPT id_pt, nuevo_nombre
 --
 -- Destino
----- ActualizarNombre()
----- ActualizarDescripcion()
----- ActualizarActividades()
----- ActualizarIdPaqueteTuristico()
+---- EXEC ActualizarNombre id_destino, nuevo_nombre
+---- EXEC ActualizarDescripcion id_destino, nueva_descripcion
+---- EXEC ActualizarActividades id_destino, nueva_actividad
+---- EXEC ActualizarIdPaqueteTuristico id_destino, nuevo_id_pt
 --
 -- Cliente
----- CrearCliente()
----- ActualizarNombre()
----- ActualizarCorreo()
----- ActualizarContrasenia()
----- EliminarCliente()
+---- EXEC CrearCliente
+---- EXEC ActualizarNombre
+---- EXEC ActualizarCorreo
+---- EXEC ActualizarContrasenia
+---- EXEC ActualizarNombreUsuario
+---- EXEC EliminarCliente
 --
+-- Hay que hacer una nueva tabla entre destinos y paquetes turisticos, una vista para esto y lograr extraer información sin los id
 
 
 
 -- Paquete Turistico -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 ---- Procedimiento para insertar un paquete turístico
 CREATE PROCEDURE InsertarPaqueteTuristico
-    @nombre_pq NVARCHAR(255),
+    @nombre_pq VARCHAR(255),
     @fecha_inicio DATE,
     @fecha_termino DATE,
     @precio_final INT
@@ -121,7 +139,7 @@ BEGIN
         UPDATE PaqueteTuristico
         SET fecha_inicio = @nueva_fecha_inicio,
             fecha_termino = @nueva_fecha_termino
-        WHERE id = @id_pt;
+        WHERE id_paquete_turistico = @id_pt;
 
         PRINT 'Fechas del paquete actualizadas exitosamente';
     END TRY
@@ -139,7 +157,7 @@ BEGIN
     BEGIN TRY
         UPDATE PaqueteTuristico
         SET nombre = @nuevo_nombre
-        WHERE id = @id_pt;
+        WHERE id_paquete_turistico = @id_pt;
 
         PRINT 'Nombre del paquete actualizado exitosamente';
     END TRY
@@ -157,7 +175,7 @@ BEGIN
     BEGIN TRY
         UPDATE PaqueteTuristico
         SET precio_final = @nuevo_precio_final
-        WHERE id = @id_pt;
+        WHERE id_paquete_turistico = @id_pt;
         PRINT 'Nombre del paquete actualizado exitosamente';
     END TRY
     BEGIN CATCH
@@ -165,9 +183,12 @@ BEGIN
     END CATCH
 END;
 
+
+
+
 -- Destino -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 ---- Procedimiento para actualizar nombre del destino
-CREATE PROCEDURE ActualizarNombreDes
+CREATE PROCEDURE ActualizarNombreDestino
     @id_des INT,
     @nuevo_nombre varchar
 AS
@@ -175,7 +196,7 @@ BEGIN
     BEGIN TRY
         UPDATE Destino
         SET nombre = @nuevo_nombre
-        WHERE id = @id_des;
+        WHERE id_destino = @id_des;
 
         PRINT 'Nombre del destino actualizado exitosamente';
     END TRY
@@ -183,6 +204,9 @@ BEGIN
         PRINT 'Error al actualizar: ' + ERROR_MESSAGE();
     END CATCH
 END;
+
+
+
 
 -- Cliente -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 ---- Procedimiento para insertar un cliente
@@ -213,7 +237,7 @@ BEGIN
         -- Actualizar el correo del usuario
         UPDATE USUARIO
         SET correo = @correo_nuevo
-        WHERE id = @id;
+        WHERE id_cliente = @id;
 
         -- Mensaje de éxito
         PRINT 'CORREO ACTUALIZADO';
@@ -226,16 +250,16 @@ END;
 
 ---- Procedimiento para borrar cliente
 CREATE OR ALTER PROCEDURE BorrarCliente
-    @nombre_cliente VARCHAR
+    @nombre_usuario VARCHAR
 AS
 BEGIN
     BEGIN TRY
         -- Elimina al cliente con el nombre especificado
         DELETE FROM cliente
-        WHERE nombre = @nombre_cliente;
+        WHERE usuario = @nombre_usuario;
 
         -- Mensaje de confirmación
-        PRINT 'CLIENTE CON NOMBRE ' + @nombre_cliente + ' ELIMINADO CORRECTAMENTE';
+        PRINT 'CLIENTE CON USUARIO ' + @nombre_usuario + ' ELIMINADO CORRECTAMENTE';
     END TRY
     BEGIN CATCH
         -- Manejo de errores
@@ -245,47 +269,24 @@ END;
 
 ---- Procedimiento para cambiarContrasenia
 CREATE OR ALTER PROCEDURE CambiarContrasenia
-    @id INT,
+    @usuario VARCHAR,
     @nueva_contrasenia VARCHAR
 AS
 BEGIN
     BEGIN TRY
-        -- Actualiza la contraseña del usuario con el ID especificado
-        UPDATE USUARIO
+        UPDATE Cliente
         SET contrasenia = @nueva_contrasenia
-        WHERE id = @id;
-
-        -- Mensaje de confirmación
-        PRINT 'CONTRASEÑA ACTUALIZADA CORRECTAMENTE PARA EL USUARIO CON ID ' + CAST(@id AS VARCHAR);
+        WHERE usuario = @usuario;
+        PRINT 'CONTRASEÑA ACTUALIZADA CORRECTAMENTE PARA EL USUARIO ' + @usuario;
     END TRY
     BEGIN CATCH
-        -- Manejo de errores
         PRINT 'ERROR: ' + ERROR_MESSAGE();
     END CATCH
 END;
 
 
--- Usuario -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
----- Procedimiento para cambiar nombre de usuario
-CREATE OR ALTER PROCEDURE cambiar_nombre_usuario
-    @nombre_usuario VARCHAR,
-    @nuevo_nombre VARCHAR
-AS
-BEGIN
-    BEGIN TRY
-        -- Actualiza el nombre del usuario utilizando el nombre de usuario
-        UPDATE USUARIO
-        SET nombre = @nuevo_nombre
-        WHERE nombre = @nombre_usuario;
 
-        -- Mensaje de confirmación
-        PRINT 'NOMBRE DEL USUARIO CON NOMBRE ' + @nombre_usuario + ' ACTUALIZADO A ' + @nuevo_nombre;
-    END TRY
-    BEGIN CATCH
-        -- Manejo de errores
-        PRINT 'ERROR: ' + ERROR_MESSAGE();
-    END CATCH
-END;
+
 
 -- TRIGGERS DE AUDITORIA ----------------------------------------------------------------------------------------------------------------------------------------------------
 ---- Trigger de auditoria para paquete turistico
@@ -293,7 +294,7 @@ CREATE TABLE SesionPaqueteTuristico (
     os_user VARCHAR(100),
     ip_user VARCHAR(100),
     sesion_usuario VARCHAR(100),
-    fecha DATETIME,
+    fecha DATE,
     a_nombre VARCHAR(100),
     a_fecha_inicio DATE,
     a_fecha_termino DATE,
@@ -304,14 +305,13 @@ CREATE TABLE SesionPaqueteTuristico (
     n_precio_final INT
 );
 
-CREATE TRIGGER ActualizarPaqueteTuristico
+CREATE TRIGGER AuditoriaPaqueteTuristico
 ON PaqueteTuristico
 AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Insertar en la tabla SesionPaqueteTuristico si hay cambios en los campos específicos
     INSERT INTO SesionPaqueteTuristico (
         os_user,
         ip_user,
@@ -327,22 +327,22 @@ BEGIN
         n_precio_final
     )
     SELECT 
-        SYSTEM_USER AS os_user,                      -- Usuario del sistema
-        CONNECTIONPROPERTY('client_net_address') AS ip_user, -- Dirección IP del cliente
-        SESSION_USER AS sesion_usuario,              -- Usuario de la sesión
-        GETDATE() AS fecha,                          -- Fecha actual
-        d.nombre AS a_nombre,                        -- Valores antiguos
+        SYSTEM_USER AS os_user,
+        CAST(CONNECTIONPROPERTY('client_net_address') AS VARCHAR(100)) AS ip_user,
+        SESSION_USER AS sesion_usuario, 
+        GETDATE() AS fecha, 
+        d.nombre AS a_nombre, 
         d.fecha_inicio AS a_fecha_inicio,
         d.fecha_termino AS a_fecha_termino,
         d.precio_final AS a_precio_final,
-        i.nombre AS n_nombre,                        -- Valores nuevos
+        i.nombre AS n_nombre,
         i.fecha_inicio AS n_fecha_inicio,
         i.fecha_termino AS n_fecha_termino,
         i.precio_final AS n_precio_final
     FROM 
         Inserted i
     INNER JOIN 
-        Deleted d ON i.id = d.id                     -- Relacionar filas antiguas y nuevas
+        Deleted d ON i.id_paquete_turistico = d.id_paquete_turistico
     WHERE 
         d.nombre != i.nombre 
         OR d.fecha_inicio != i.fecha_inicio
@@ -352,6 +352,7 @@ END;
 
 
 ---- Trigger de auditoria para destino
+-- Crear tabla para auditoría de cambios en Destino
 CREATE TABLE SesionDestino (
     os_user VARCHAR(100),
     ip_user VARCHAR(100),
@@ -365,14 +366,14 @@ CREATE TABLE SesionDestino (
     n_actividades VARCHAR(200)
 );
 
-CREATE TRIGGER ActualizarDestino
+-- Trigger para registrar actualizaciones en Destino
+CREATE TRIGGER AuditoriaDestino
 ON Destino
 AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Insertar en la tabla SesionDestino si hay cambios en los campos específicos
     INSERT INTO SesionDestino (
         os_user,
         ip_user,
@@ -386,40 +387,23 @@ BEGIN
         n_actividades
     )
     SELECT 
-        SYSTEM_USER AS os_user,                      -- Usuario del sistema
-        CONNECTIONPROPERTY('client_net_address') AS ip_user, -- Dirección IP del cliente
-        SESSION_USER AS sesion_usuario,              -- Usuario de la sesión
-        GETDATE() AS fecha,                          -- Fecha actual
-        d.nombre AS a_nombre,                        -- Valores antiguos
+        SYSTEM_USER AS os_user,
+        CAST(CONNECTIONPROPERTY('client_net_address') AS VARCHAR(100)) AS ip_user,
+        SESSION_USER AS sesion_usuario,
+        GETDATE() AS fecha,
+        d.nombre AS a_nombre,
         d.descripcion AS a_descripcion,
         d.actividades AS a_actividades,
-        i.nombre AS n_nombre,                        -- Valores nuevos
+        i.nombre AS n_nombre,
         i.descripcion AS n_descripcion,
         i.actividades AS n_actividades
     FROM 
         Inserted i
     INNER JOIN 
-        Deleted d ON i.id = d.id                     -- Relacionar filas antiguas y nuevas
+        Deleted d ON i.id_destino = d.id_destino
     WHERE 
         d.nombre != i.nombre 
         OR d.descripcion != i.descripcion
         OR d.actividades != i.actividades;
 END;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
