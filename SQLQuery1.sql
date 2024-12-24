@@ -1,21 +1,15 @@
 create database agencia_db;
 use agencia_db;
 
-CREATE TABLE PaqueteTuristico(
-    id_paquete_turistico int identity(1,1) primary key,
-    nombre varchar(500) not null,
-    fecha_inicio date not null,
-    fecha_termino date not null,
-    precio_final int not null
-);
 
 CREATE TABLE Destino(
     id_destino int identity(1,1) primary key,
     nombre varchar(50) not null,
     descripcion varchar(500) not null,
     actividades varchar(200) not null,
-    id_paquete_turistico INT REFERENCES PaqueteTuristico(id_paquete_turistico) not null
-);
+	costo float,
+    );
+
 
 CREATE TABLE Cliente(
 	id_cliente int identity(1,1) primary key,
@@ -24,6 +18,23 @@ CREATE TABLE Cliente(
 	correo varchar(400) not null,
 	contrasenia varchar(300) not null
 );
+
+CREATE TABLE PaqueteTuristico(
+    id_paquete_turistico int identity(1,1) primary key,
+    nombre_destino varchar(500) not null,
+    fecha_inicio date not null,
+    fecha_termino date not null,
+    precio_final int not null
+	id_destino INT REFERENCES Destino(id_destino)
+	id_cliente INT REFERENCES Cliente(id_cliente)
+);
+
+
+
+insert into PaqueteTuristico(id_paquete_turistico, nombre_destino, fecha_inicio, fecha_termino, precio_final)
+values(0, "Paquete ", )---- REVISAR
+
+
 
 create table Reserva (
 	id_reserva int identity(1,1) primary key,
@@ -38,11 +49,56 @@ create table DetallePaquete (
 	id_destino int REFERENCES Destino(id_destino),
 	id_paquete_turistico int REFERENCES PaqueteTuristico(id_paquete_turistico)
 );
+
+
+--FALTA PONER PRECIO SE MODIFICO LA TABLA DESTINO Y PAQUETE EN LAS FK
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(0,'San Pedro de Atacama', 'Con paisajes como el Valle de la Luna, los géiseres del Tatio y salares impresionantes.','Excursiones al Valle de la Luna y Valle de la Muerte, Visitar los géiseres del Tatio al amanecer.',300000)
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(1, 'Iquique', 'Famoso por sus playas, el casco histórico y el desierto de Pica y Humberstone (sitio declarado Patrimonio de la Humanidad).','Practicar parapente desde las dunas cercanas')
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(2, 'Antofagasta', 'Hogar del Monumento Natural La Portada y acceso al desierto más árido del mundo', 'Excursiones al Salar de Atacama o al Observatorio ALMA')
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+Values(3, 'Santiago', 'La capital, con lugares como el Cerro San Cristóbal, el Palacio de La Moneda y los museos nacionales.','Visitar museos como el Museo de Arte Precolombino y el Museo Nacional de Historia.',)
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(4, 'Viña del Mar','Valparaíso es famosa por sus cerros, arte callejero y ascensores históricos, mientras que Viña del Mar tiene playas y festivales.','Relajarte en las playas de Viña del Mar,
+visitar el jardín botánico y el famoso reloj de flores.')
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(5,'Isla de Pascua','Con sus icónicos moáis, volcanes y cultura única.','Practicar buceo o snorkel en las aguas cristalinas.')
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(6,'Valle del Elqui','Ideal para observar las estrellas, disfrutar del pisco chileno y relajarse.','Practicar trekking o relajarte en termas.')
+
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(7, 'Pucón', 'Perfecto para deportes acuáticos, senderismo y disfrutar de termas.','Deportes acuáticos como kayak o paddle en el lago.')
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(8,'Valdivia','Con su fuerte historia colonial, cervecerías artesanales y ríos navegables.','Navegar por los ríos Calle-Calle y Valdivia.
+Visitar los fuertes históricos en Corral y Niebla.');
+
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(9, 'Chiloé', 'Con su arquitectura tradicional, iglesias Patrimonio de la Humanidad y mitología rica. ','Visitar las iglesias Patrimonio de la Humanidad.
+Explorar el Parque Nacional Chiloé y avistar fauna.')
+
+insert into Destino(id_destino, nombre, descripcion, actividades,costo)
+values(10, 'Torres del Paine', 'Un paraíso para senderistas con montañas, glaciares y lagos de colores vibrantes.','Navegar por el lago Grey para ver el glaciar.
+Avistamiento de guanacos, cóndores y otros animales.')
+
+
+
+
 -- VISTAS --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 CREATE VIEW vista_detalle_paquete AS
     SELECT PaqueteTuristico.id_paquete_turistico, 
-            PaqueteTuristico.nombre, 
+            PaqueteTuristico.nombre_destino, 
             PaqueteTuristico.fecha_inicio, 
             PaqueteTuristico.fecha_termino, 
             PaqueteTuristico.precio_final, 
@@ -53,7 +109,7 @@ CREATE VIEW vista_detalle_paquete AS
     JOIN Destino 
     ON PaqueteTuristico.id_paquete_turistico = Destino.id_paquete_turistico
     GROUP BY PaqueteTuristico.id_paquete_turistico, 
-                PaqueteTuristico.nombre,
+                PaqueteTuristico.nombre_destino,
                 PaqueteTuristico.fecha_inicio, 
                 PaqueteTuristico.fecha_termino, 
                 PaqueteTuristico.precio_final, 
@@ -72,6 +128,8 @@ CREATE VIEW vista_reserva AS
     GROUP BY Cliente.id_cliente, 
     PaqueteTuristico.id_paquete_turistico
 ;
+
+
 
 -- Triggers ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Paquete Turistico - con auditoria
