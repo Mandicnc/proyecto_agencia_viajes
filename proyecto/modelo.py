@@ -51,7 +51,7 @@ class Destino:
             data = cursor.fetchall()
             for i in data:
                 print(f"""
-                      id: {i[0]} || nombre: {i[1]}
+                       || nombre: {i[1]}
                       descripcion: {i[2]}
                       actividades disponibles: {i[3]}
                       costo: {i[4]}
@@ -60,17 +60,18 @@ class Destino:
             print(error)
             
 class PaqueteTuristico:
-    def __init__(self, destino, fecha_inicio, fecha_fin, precio, disponibilidad):
-        self.__destino = destino 
+    def __init__(self, nombre_destino, fecha_inicio, fecha_termino, precio_final):
+        self.__nombre_destino = nombre_destino
         self.__fecha_inicio = fecha_inicio 
-        self.__fecha_fin = fecha_fin 
-        self.__precio = precio
-        self.__disponibilidad = disponibilidad
+        self.__fecha_termino = fecha_termino
+        self.__precio_final = precio_final
+
+       
         
     def AgregarPaquete(self):
         try:
-            insert_qry = "INSERT INTO PaqueteTuristico(destino, fecha_inicio, fecha_fin, precio, disponibilidad) values (?, ?, ?, ?, ?)"
-            values_qry = self.__destino, self.__fecha_inicio, self.__fecha_fin, self.__precio, self.__disponibilidad
+            insert_qry = "INSERT INTO PaqueteTuristico(nombre_destino, fecha_inicio, fecha_termino, precio_final) values (?, ?, ?, ?, ?)"
+            values_qry = self.__nombre_destino ,self.__fecha_inicio, self.__fecha_termino, self.__precio_final
             cursor.execute(insert_qry, values_qry)
             cursor.commit()
             print("Paquete turistico agregado exitosamente")
@@ -80,13 +81,38 @@ class PaqueteTuristico:
     @staticmethod
     def EliminarPaquete(id):
         try:
-            delete_qry = "DELETE FROM PaqueteTuristico where id = ?"
+            delete_qry = "DELETE FROM PaqueteTuristico where id_ = ?"
             cursor.execute(delete_qry, id)
             cursor.commit()
             print("Paquete turistico eliminado exitosamente")
         except Exception as error:
             print(error)
     
+    
+    def EliminarDestinoPaquete(id_cliente):
+        try:
+            delete_qry = "UPDATE PaqueteTuristico set nombre_destino = ' ' where id_cliente = ? " 
+            cursor.execute(delete_qry,id_cliente)
+            cursor.commit()
+            print("destino eliminado exitosamente")
+        
+        except Exception as e:
+            print("no se pudo eliminar el destino del paquete")
+            
+
+# SE CREA UNA NUEVA FILA PARA AGREGAR OTRO DESTINO       
+    def agregarDestinoNuevo(destino):
+        try:
+            
+            alter_qry = "ALTER TABLE PaqueteTuristico ADD COLUMN nuevo_destino VARCHAR(70)"
+            cursor.execute(alter_qry, destino)
+            cursor.commit()
+        except Exception as e:
+            print("no se pudo agregar nuevo destino",e)
+            
+            
+        
+            
     @staticmethod
     def VerDisponibilidad():
         try:
@@ -140,4 +166,4 @@ class Reserva:
 #   PaqueteTuristico.CalcularPrecioTotal()
 #   
 #   
-#   
+#
